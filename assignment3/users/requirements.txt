@@ -1,0 +1,7 @@
+flask
+flask_api
+flask-sqlalchemy
+sqlalchemy
+flask-marshmallow
+marshmallow-sqlalchemy
+requests

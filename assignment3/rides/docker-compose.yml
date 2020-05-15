@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  users:
+    image: users:latest
+    build: .
+    command: python3 CC_0139_0148_0905_1736_users.py 
+    restart: always
+    ports:
+      - "8080:8080"
+  rides:
+    image: rides:latest
+    build: .
+    command: python3 CC_0139_0148_0905_1736_rides.py 
+    restart: always
+    ports:
+      - "8000:8000"
+    links:
+      - users
+    depends_on:
+      - users
