@@ -150,7 +150,7 @@ Following are the expected functionalities that need to be implemented:
   ## References
   1) [Create an AWS EC2 instance](https://www.guru99.com/creating-amazon-ec2-instance.html)
   2) [Assign an Elastic IP to your AWS EC2 instance](https://www.cloudbooklet.com/how-to-assign-an-elastic-ip-address-to-your-ec2-instance-in-aws/)
-  3)[Use python SQLite3 using SQLAlchemy](https://medium.com/@mahmudahsan/how-to-use-python-sqlite3-using-sqlalchemy-158f9c54eb32)
+  3) [Use python SQLite3 using SQLAlchemy](https://medium.com/@mahmudahsan/how-to-use-python-sqlite3-using-sqlalchemy-158f9c54eb32)
   
   ## Contact
-  For any queries, email at dprajwala11@gmail.com / sanjanashekar99@gmail.com / sakshidgoel@gmail.com / abhijeetmurthy@gmail.com
+  For any comments or questions, please contact us at dprajwala11@gmail.com / sanjanashekar99@gmail.com / abhijeetmurthy@gmail.com / sakshidgoel@gmail.com
