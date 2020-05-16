@@ -16,6 +16,8 @@ This project has been broken down into four parts:
   4) Assignment_3
   5) Project
 
+---
+
 ## Assignment_0
 
 ### Deliverables
@@ -65,6 +67,8 @@ You can give the launched instance whatever name you want. To run and connect to
 4) In the 'Resource type', choose Instance and choose the instance you want to associate this ipv4 address with from the dropdown on the Instance field.
 5) If you have any other Elastic IP address assigned to this instance before and you need to re-associate, you have to enable the checkbox of 'Reassociation'.
 6) Click Associate and a new elastic IPv4 will be assigned to your instance.
+
+---
 
 ## Assignment_1
 
@@ -123,6 +127,8 @@ In this portion of the development, our main focus is on completing the backend 
     + Route: /api/v1/db/read 
     + HTTP Request Method: POST 
 
+---
+
 ## Assignment_2
 
 In this assignment, the monolithic application built in assignment 1 is split up into two microservices - one catering the user management and another catering to the ride management. These two microservices should be started in separate docker containers (Users and Rides) running on one AWS instance. The microservices will talk to each other via their respective REST interfaces.
@@ -152,7 +158,7 @@ The APIs on this microservice are:
 This miroservice must call the **List all users** API on the Users microservice in order to verify a given username actually exists. (Example: when a ride is being created/joined).
 
 ### Deliverables
-+ Running 2 microservices with the given container name ("users" and "rides") and tag ("latest") and ENV variable.
++ Running two microservices with the given container name ("users" and "rides") and tag ("latest") and ENV variable.
 + Exposing 8000 and 8080 on the public IP of the AWS instance.
     + For the rides microservice, map web server port within the container (usually 80) to localhost 8000.
     + For the users microservice, map web server port within the container (usually 80) to localhost 8080.
@@ -179,11 +185,14 @@ We have one docker-compose file for each microservice.
 5. **app.py:** It includes all the REST APIs and the backend processing part of the application.
 6. **Web Server:** If using nginx/apache, each microservice must have their own web server.
 
+---
+
 ## Assignment_3
 
 In this section, we have to put the two microservices (containers) into two different AWS EC2 instaces now. Both of them need to be accessible from under the same public IP address and also the same port (80). This is only possible by using a load balancer that supports path-based routing.
 
 ### Deliverables
+   + Two instances with the two microservices as containers
    + New APIs
    + Setting up the load balancer
 
@@ -224,6 +233,156 @@ Each target group routes requests to one or more registered targets, such as EC2
 6. Make sure the security group of the load balancer exposes ports 22 and 80 only.
 7. When the *rides* instance makes a call to the *users* instance to check if a user exists, the HHTP request from the *rides* instance must have the *Origin* header set to either the public IP address or public DNS name of the *rides* instance and this call must be made over the load balancer.
 
+---
+
+## Project
+
++ The project is focused on building a fault tolerant, highly available database as a service for the RideShare application. We will continue to use our users and rides VM, their containers, and the load balancer for the application. In addition now, we will enhance our existing DB APIs to provide this service.
++ The db read/write APIs we had written in the first assignment will be used as endpoints for this DBaaS orchestrator. The same db read/write APIs will now be exposed by the orchestrator.
++ The users and rides microservices will no longer be using their own databases, they will instead be using the “DBaaS service” that we will create for this project. This will be the only change that has to be made to the existing users and rides microservices. Instead of calling the db read and write APIs on localhost, those APIs will be called on the IP address of the database orchestrator.
++ We will implement a custom database orchestrator engine that will listen to incoming HTTP requests from users and rides microservices and perform the database read and write
+according to the given specifications.
+
+### Deliverables
+   + Master/slave worker
+   + Orchestrator
+   + Setting up RabbitMQ, with all queues having correct producer and consumer
+   + Perform data replica/sync
+   + Scale out/in
+   + Fault tolerance (slave + master) using Zookeeper with correct znodes and watch
+
+### Steps
+1. Implement orchestrator with RabbitMQ
+2. Implement replication/sync
+3. Demonstrate scale out/in
+4. Implement High Availability with Zookeeper
+
+### Architecture of DBaaS
+
+● Both the master and slave must run the same code, as any slave can be elected as the master.
+● Use docker sdk to start and stop new containers programmatically
+● Use the db read/write API implementation from the first assignment to implement ‘master' and the ‘slave’ workers.
+● The ‘api/v1/db/read’ and ‘api/v1/db/write’ must only publish the request to the relevant queues and not write to db themselves
+● Crash APIs should return 200 OK with message body as < "pid_of_container_killed" >
+● For syncing a new slave with all the data, you can use multiple techniques, a few of them could be
+  o Making the message “durable” so they are not removed from the queue
+  o Not sending “ack” from the consumers so the messages stay in the queue, so when a new slave joins becomes a consumer, they can get all the messages.
+  o Or any other algorithm you find appropriate.
+● Other than the given 4 queues, you can use any number of temporary queues at your discretion.
+
+### Points to Remember
+
+* You must keep the AWS setup that you created in your last assignment still running. The Users container must still be running on the Users EC2 instance, and the AWS Application Load Balancer must still perform the path-based load balancing before requests are ever received by the db container orchestrator.
+* The read write db requests from users/rides container will no longer go the ‘api/v1/db/read’ API running on the localhost, but instead must go to the public IP of the DBaaS VM.
+
+● Initially you will start with 1 slave and 1 master worker.
+● Zookeeper, RabbitMQ will both run in their own containers, their official image can be pulled from dockerhub.
+● Hence initially you will be running 5 containers, for “zookeeper”, “rabbitmq”, “orchestrator”, “slave” and “master” which will then be increased/decreased accordingly.
+● Ideally you must be using “docker-compose” to orchestrate your containers
+
+### Notes
+
+We will have two workers -> master and slave
+Master will operate on the writeQ
+Slave will respond to the read requests and redirect to readQ, after responding it will write response to responseQ
+Pika is a python client of rabbitMQ
+All messages from producer go through exchange to queue specified by name in routing_key
+callback function is called when a message arrives at a queue
+When we deploy worker nodes, the rabbitMQ will send the requests to each worker round robin way.
+After each consumer gets the message, it sends a basic_ack
+'durable' can help the queues to stay if rabbitMQ restarts or crashes. It is put with prefetch_count=1 while declaring the queues
+RabbitMQ doesnt take care of sending messages equally, so we use the basic#qos
+Binding is the relationship between the exchange and the queues
+In direct exchange, the message will go to the queue where the routing_key (name of queue) = binding_key
+In fanout exchange, round robin
+
+### 'Remote procedure call'
+When we send a request to some other machine and wait for the result
+
+### KAZOO
+It has states that can help us take actions when the connection is stopped, restored or when zookeeper session has expired.
+kazoo states:
+1) LOST when an instance is first created
+2) CONNECTED when the instance gets connected
+3) SUSPENDED when it needs to transition to a new zookeeper
+
+### orchestrator:
+1) List workers of all containers that is working
+2) To remove a master -> lowest pid
+3) To remove a worker-> highest pid
+
+### Details
+docker sdk -> to start the workers
+name of worker -> worker_<random number>
+to generate pid -> subprocess module
+
+initially, create 2 workers -> client.container.run()
+
+worker and orchestrator have ubuntu images
+all services -> worker , rabbitmq and orchestrator run on same server
+
+crash api is made by making a call and getting all the worker names with pids and crashMaster will kill the first one of it. using client.containers.kill()
+
+crashSlave gets the sorted list of workers and kills the last value of that list which is highest pid
+
+to find pid of any containe, we use subprocess.check_output('docker inspect <name of container>')
+
+### RabbitMQ related stuff:
+* We could have contcated between the containers using ips but we were told to use rabbitMQ..
+
+* We were supposed to writeRPC.call() to the worker
+
+
+### Concepts
+
+We use direct exchange
+For read req, routing_key = 'read_queue'
+RabbitMQ works on 5672 port
+
+Worker.py is a common code
+DBClear directly calls the orchestrator and forwards it to worker
+
+All workers have a copy of the db image
+We have created a read and write queue for each of the worker
+
+DBread and Dbwrite are normal functions in worker
+
+slave_synchronisation is used in writeDB, where it writes it to the syncQ in a round robin fashion
+
+read_tag and write_tag are set to None intially, we cancel queues based on whether it is a master or not.
+
+A master on write, sends a requets to all the slave's syncQ. Now all the slaves read the message and use DBwrite or DBclear.
+
+requests are idempotent so it doesn't 
+
+### Replication 
+One master and one slave initially, so dbs are consisitent. Now if we spawn  a new slave, we create a shared volume. Since docker doesnt allow to transfer data from one of cotainer to other, it writes to the volume and then all dbs sync according to this...across workers. So when a worker starts, it takes a copy of shared volume from the shared db
+
+### Leader Election
+Zookeeper does leader election
+Based on leader election, queues are initialised
+
+### Nodes we used 
+-> persistent and ephemeral 
+Persisitent -> always stays inside the zookeeper node eg orchestrator 
+Ephemeral -> It gets deleted once the zookeeper turns off eg worker
+Cant have child nodes
+
+### Datawatch
+* Datawatch is a watcher that is in form of a decorator function, zk.dataWatch()
+
+### Scaling Management:
+After first read request, scaling function should be called every 2 mins.
+We make a db and set all new requests there.
+This is threaded.
+Depending on number of read requests we extract the number of slaves that we need at a point. We spawn or kill containers as needed
+
+### Fault tolerance:
+If we crash a slave, a new worker should be created.
+@zk.ChildrenWatch keeps a watch on the childreen of a root. 
+
+---
+
 ## Functionalities implemented
 Following are the expected functionalities that need to be implemented:
   1. Queues for message passing
@@ -232,7 +391,9 @@ Following are the expected functionalities that need to be implemented:
   4. Scaling 
   5. Orchestrator, worker set up
   6. Rabbitmq, zookeeper usage
-  
+
+---
+
 ## Commands
 1. Install Flask
 ```
@@ -266,7 +427,9 @@ scp -r -i <.pem file location> ubuntu@<public DNS of instance>:<location on inst
 
 scp -r -i /Desktop/amazon.pem ubuntu@ec2-54-166-128-20.compute-1.amazonaws.com:~/data/ ./Desktop/MS2334.txt
 ```
-  
+
+---
+
 ## References
 1) [Create an AWS EC2 instance](https://www.guru99.com/creating-amazon-ec2-instance.html)
 2) [Assign an Elastic IP to your AWS EC2 instance](https://www.cloudbooklet.com/how-to-assign-an-elastic-ip-address-to-your-ec2-instance-in-aws/)
@@ -274,6 +437,16 @@ scp -r -i /Desktop/amazon.pem ubuntu@ec2-54-166-128-20.compute-1.amazonaws.com:~
 4) [Building Docker Images](https://docs.docker.com/get-started/part2/)
 5) [Mapping container port to localhost of AWS instance](https://docs.docker.com/get-started/part2/#run-the-app)
 6) [Creating AWS target groups and a load balancer with path routing](https://hackernoon.com/what-is-amazon-elastic-load-balancer-elb-16cdcedbd485)
-  
+7) [Zookeeper](http://zookeeper.apache.org/)
+8) [RabbitMQ tutorials](https://www.rabbitmq.com/getstarted.html)
+9) [Zookeeper container image](https://hub.docker.com/_/zookeeper/)
+10) [RabbitMQ container image](https://hub.docker.com/_/rabbitmq/)
+11) [Leader Election using Zookeeper](https://www.allprogrammingtutorials.com/tutorials/leader-election-using-apache-zookeeper.php)
+12) [AMQP Concepts](https://www.rabbitmq.com/tutorials/amqp-concepts.html)
+13) [About DBaaS](http://www.vlss-llc.com/blog/what-is-database-as-a-service-dbaas)
+14) [Basics of kazoo](https://kazoo.readthedocs.io/en/latest/basic_usage.html)
+
+---
+
 ## Contact
 For any comments or questions, please contact us at dprajwala11@gmail.com / sanjanashekar99@gmail.com / abhijeetmurthy@gmail.com / sakshidgoel@gmail.com
