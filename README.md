@@ -10,11 +10,11 @@ Database-as-a-service is a database service that typically runs on a cloud archi
   5. Automation  
   
 This project has been broken down into four parts:
-1) Assignment_0
-2) Assignment_1
-3) Assignment_2
-4) Assignment_3
-5) Project
+  1) Assignment_0
+  2) Assignment_1
+  3) Assignment_2
+  4) Assignment_3
+  5) Project
 
 ## Assignment_0
 
@@ -68,7 +68,7 @@ You can give the launched instance whatever name you want. To run and connect to
 
 ## Assignment_1
 
-In this portion of the development, our main focus is on completing the backend processing of _RideShare_ using REST APIs on the AWS instance, using Flask. When creating items on the AWS instance, we will be storing it in an SQLite database, using SQLAlchemy.
+In this portion of the development, our main focus is on completing the backend processing of _RideShare_ using REST APIs on the AWS instance, using Flask. When creating items on the AWS instance, we will be storing it in an SQLite database, using SQLAlchemy. We must deploy the flask application on an application server like gunicorn which runs on top of a web server like nginx using wsgi.
 
 ### Deliverables
   + At the end of our development, our application should be able to: 
@@ -96,32 +96,75 @@ In this portion of the development, our main focus is on completing the backend 
 
 ### Implemented APIs
 1. **Add user:**
-	  + Route: /api/v1/users
-	  + HTTP Request Method: PUT
+    + Route: /api/v1/users
+    + HTTP Request Method: PUT
 2. **Remove user:**
-	  + Route: /api/v1/users/{username}
-	  + HTTP Request Method: DELETE
+    + Route: /api/v1/users/{username}
+    + HTTP Request Method: DELETE
 3. **Create a new ride:**
-	  + Route: /api/v1/rides
-	  + HTTP Request Method: POST
+    + Route: /api/v1/rides
+    + HTTP Request Method: POST
 4. **List all upcoming rides for a given source and destination:**
-	  + Route: /api/v1/rides?source={source}&destination={destination} 
-	  + HTTP Request Method: GET 
+    + Route: /api/v1/rides?source={source}&destination={destination} 
+    + HTTP Request Method: GET 
 5. **List all the details of a given ride:**
-	  + Route: /api/v1/rides/{rideId} 
+    + Route: /api/v1/rides/{rideId} 
     + HTTP Request Method: GET 
 6. **Join an existing ride:**
-	  + Route: /api/v1/rides/{rideId} 
+    + Route: /api/v1/rides/{rideId} 
     + HTTP Request Method: POST
 7.  **Delete a ride:**
-	  + Route: /api/v1/rides/{rideId} 
+    + Route: /api/v1/rides/{rideId} 
     + HTTP Request Method: DELETE 
 8. **Write to DB:**
-	  + Route: /api/v1/db/write 
+    + Route: /api/v1/db/write 
     + HTTP Request Method: POST 
 9. **Read from DB:**
-	  + Route: /api/v1/db/read 
+    + Route: /api/v1/db/read 
     + HTTP Request Method: POST 
+
+## Assignment_2
+
+In this assignment, the monolithic application built in assignment 1 is split up into two microservices - one catering the user management and another catering to the ride management. These two microservices should be started in separate docker containers (Users and Rides) running on one AWS instance. The microservices will talk to each other via their respective REST interfaces.
+
+### Users Microservice
+The APIs on this microservice are:
+1) **Add user** (reused API from assignment 1)
+2) **Remove user** (reused API from assignment 1)
+3) **List all users:**
+    + Route: /api/v1/users
+    + HTTP Request Method: GET
+4) **Clear db:**
+    + Route: /api/v1/db/clear
+    + HTTP Request Method: POST
+
+### Rides Microservice
+The APIs on this microservice are:
+1. **Create a new ride** (reused API from assignment 1)
+2. **List all upcoming rides for a given source and destination** (reused API from assignment 1)
+3. **List all the details of a given ride** (reused API from assignment 1)
+4. **Join an existing rid** (reused API from assignment 1)
+5.  **Delete a ride** (reused API from assignment 1)
+6. **Clear db:**
+    + Route: /api/v1/db/clear
+    + HTTP Request Method: POST
+    
+This miroservice must call the **List all users** API on the Users microservice in order to verify a given username actually exists. (Example: when a ride is being created/joined).
+
+### Deliverables
+for rides ms, map the port within the container to 8000
+for users ms, 8080
+
+1. Running 2 microservices with the given container name and tag and ENV variable
+2. Exposing 8000 and 8080 on public ip
+3. Implementing and calling the “List all users” API from the “rides” container
+
+### Dockerfile
+
+Dockerfile is a text file that is used to build the image
+docker-compose.yml is a file that contains the configuration on how many containers to make, what ports to expose, which database, volume to use to externally store the data etc
+We have one docker-compose file for each microservice
+Each ms will have own database, no shared db can be used
 
 ## Functionalities implemented
 Following are the expected functionalities that need to be implemented:
