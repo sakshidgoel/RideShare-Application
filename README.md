@@ -152,19 +152,75 @@ The APIs on this microservice are:
 This miroservice must call the **List all users** API on the Users microservice in order to verify a given username actually exists. (Example: when a ride is being created/joined).
 
 ### Deliverables
-for rides ms, map the port within the container to 8000
-for users ms, 8080
++ Running 2 microservices with the given container name ("users" and "rides") and tag ("latest") and ENV variable.
++ Exposing 8000 and 8080 on the public IP of the AWS instance.
+    + For the rides microservice, map web server port within the container (usually 80) to localhost 8000.
+    + For the users microservice, map web server port within the container (usually 80) to localhost 8080.
++ Implementing and calling the “List all users” API from the “rides” container.
 
-1. Running 2 microservices with the given container name and tag and ENV variable
-2. Exposing 8000 and 8080 on public ip
-3. Implementing and calling the “List all users” API from the “rides” container
+### What is Docker?
+Docker is an open platform for developing, shipping, and running applications. Docker enables us to separate our applications from our infrastructure so we can deliver software quickly. With Docker, one can manage their infrastructure in the same ways they manage their applications. By taking advantage of Docker’s methodologies for shipping, testing, and deploying code quickly, one can significantly reduce the delay between writing code and running it in production.
 
-### Dockerfile
+### Docker Images
+An image is a read-only template with instructions for creating a Docker container. Often, an image is based on another image, with some additional customization. For example, you may build an image which is based on the ubuntu image, but installs the Apache web server and your application, as well as the configuration details needed to make your application run.
 
-Dockerfile is a text file that is used to build the image
-docker-compose.yml is a file that contains the configuration on how many containers to make, what ports to expose, which database, volume to use to externally store the data etc
-We have one docker-compose file for each microservice
-Each ms will have own database, no shared db can be used
+### Docker Containers
++ A container is a runnable instance of an image. You can create, start, stop, move, or delete a container using the Docker API or CLI. You can connect a container to one or more networks, attach storage to it, or even create a new image based on its current state.
++ By default, a container is relatively well isolated from other containers and its host machine. You can control how isolated a container’s network, storage, or other underlying subsystems are from other containers or from the host machine.
++ A container is defined by its image as well as any configuration options you provide to it when you create or start it. When a container is removed, any changes to its state that are not stored in persistent storage disappear.
+
+### Contents of a container folder
+1. Dockerfile: It is a text file that is used to build the docker image. We will use the ENV parameter in the dockerfile to have the environment variable TEAM_NAME=CC_0139_0148_0905_1736 defined within our containers.
+2. docker-compose.yml: It is a file that contains the configuration on how many containers to make, what ports to expose, which database, volume to use to externally store the data, etc.
+We have one docker-compose file for each microservice.
+3. Database: Each microservice will have their own database, shared database cannot be used.
+4. requirements.txt: It contains the required packages that need to be installed in the container image.
+5. AreaNameEnum.csv: This contains the enums of the localities that constitute the 'source and 'destination' fields in the rides microservice APIs.
+5. app.py: It includes all the REST APIs and the backend processing part of the application.
+6. Web Server: If using nginx/apache, each microservice must have their own web server.
+
+## Assignment_3
+
+In this section, we have to put the two microservices (containers) into two different AWS EC2 instaces now. Both of them need to be accessible from under the same public IP address and also the same port (80). This is only possible by using a load balancer that supports path-based routing.
+
+### Deliverables
+   + New APIs
+   + Setting up the load balancer
+
+### Additional APIs
++ The following API must be added only to the rides instance/microservice:
+   **Get total number of rides:**
+    + Route: /api/v1/rides/count
+    + HTTP Request Method: GET
+  This API will be called on the load balancer public IP and must be routed to the rides instance.
++ The following two APIs must be added to both of the instances/microservices:
+   1. **Get total HTTP requests made to microservice:**
+       * Route: /api/v1/_count
+       * HTTP Request Method: GET
+   2. **Reset HTTP requests counter:**
+       + Route: /ap1/v1/_count
+       + HTTP Request Method: DELETE
+  These two APIs above along with the existing **Clear db** APIs will be called on the public IP of each microservice directly and not on the load balancer IP, as these APIs are microservice-specific. Also, API requests should be counted whether they failed or were successful and calls to these two APIs should not be counted towards the HTTP request count returned.
+
+### Load Balancer
+A load balancer serves as the single point of contact for clients. The load balancer distributes incoming application traffic across multiple targets, such as EC2 instances, in multiple Availability Zones. This increases the availability of your application. After the load balancer receives a request, it evaluates the listener rules in priority order to determine which rule to apply, and then selects a target from the target group for the rule action.
+
+### Listener
+A listener checks for connection requests from clients, using the protocol and port that you configure. You can configure listener rules to route requests to different target groups based on the content of the application traffic. The rules that you define for a listener determine how the load balancer routes requests to its registered targets. Each rule consists of a priority, one or more actions, and one or more conditions. When the conditions for a rule are met, then its actions are performed. You must define a default rule for each listener, and you can optionally define additional rules.
+
+### Target Group
+Each target group routes requests to one or more registered targets, such as EC2 instances, using the protocol and port number that you specify. You can register a target with multiple target groups.
+
+### Steps 
+1. Create two EC2 instances and make port 22 and 80 accessible for both of them.
+2. Place *rides* container in one instamce and the *users* container in the other and make the web servers inside the containers accessible through the public IPs of the instances.
+3. The APIs must be ecposed through port 80 of the EC2 instance IP address.
+4. Create two AWS target groups, one for each instance.
+5. Create an AWS Application Load Balancer with the following rules:
+    1. If an incoming request's route matches ```/api/v1/users```, then forward it to the *users* instance using its target group.
+    2. For all other routes, forward the request to the *rides* instance using the corresponding target group.
+6. Make sure the security group of the load balancer exposes ports 22 and 80 only.
+7. When the *rides* instance makes a call to the *users* instance to check if a user exists, the HHTP request from the *rides* instance must have the *Origin* header set to either the public IP address or public DNS name of the *rides* instance and this call must be made over the load balancer.
 
 ## Functionalities implemented
 Following are the expected functionalities that need to be implemented:
@@ -194,6 +250,9 @@ Following are the expected functionalities that need to be implemented:
   1) [Create an AWS EC2 instance](https://www.guru99.com/creating-amazon-ec2-instance.html)
   2) [Assign an Elastic IP to your AWS EC2 instance](https://www.cloudbooklet.com/how-to-assign-an-elastic-ip-address-to-your-ec2-instance-in-aws/)
   3) [Use python SQLite3 using SQLAlchemy](https://medium.com/@mahmudahsan/how-to-use-python-sqlite3-using-sqlalchemy-158f9c54eb32)
+  4) [Building Docker Images](https://docs.docker.com/get-started/part2/)
+  5) [Mapping container port to localhost of AWS instance](https://docs.docker.com/get-started/part2/#run-the-app)
+  6) [Creating AWS target groups and a load balancer with path routing](https://hackernoon.com/what-is-amazon-elastic-load-balancer-elb-16cdcedbd485)
   
   ## Contact
   For any comments or questions, please contact us at dprajwala11@gmail.com / sanjanashekar99@gmail.com / abhijeetmurthy@gmail.com / sakshidgoel@gmail.com
