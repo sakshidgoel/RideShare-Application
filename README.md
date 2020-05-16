@@ -170,14 +170,14 @@ An image is a read-only template with instructions for creating a Docker contain
 + A container is defined by its image as well as any configuration options you provide to it when you create or start it. When a container is removed, any changes to its state that are not stored in persistent storage disappear.
 
 ### Contents of a container folder
-1. Dockerfile: It is a text file that is used to build the docker image. We will use the ENV parameter in the dockerfile to have the environment variable TEAM_NAME=CC_0139_0148_0905_1736 defined within our containers.
-2. docker-compose.yml: It is a file that contains the configuration on how many containers to make, what ports to expose, which database, volume to use to externally store the data, etc.
+1. **Dockerfile:** It is a text file that is used to build the docker image. We will use the ENV parameter in the dockerfile to have the environment variable TEAM_NAME=CC_0139_0148_0905_1736 defined within our containers.
+2. **docker-compose.yml:** It is a file that contains the configuration on how many containers to make, what ports to expose, which database, volume to use to externally store the data, etc.
 We have one docker-compose file for each microservice.
-3. Database: Each microservice will have their own database, shared database cannot be used.
-4. requirements.txt: It contains the required packages that need to be installed in the container image.
-5. AreaNameEnum.csv: This contains the enums of the localities that constitute the 'source and 'destination' fields in the rides microservice APIs.
-5. app.py: It includes all the REST APIs and the backend processing part of the application.
-6. Web Server: If using nginx/apache, each microservice must have their own web server.
+3. **Database:** Each microservice will have their own database, shared database cannot be used.
+4. **requirements.txt:** It contains the required packages that need to be installed in the container image.
+5. **AreaNameEnum.csv:** This contains the enums of the localities that constitute the 'source and 'destination' fields in the rides microservice APIs.
+5. **app.py:** It includes all the REST APIs and the backend processing part of the application.
+6. **Web Server:** If using nginx/apache, each microservice must have their own web server.
 
 ## Assignment_3
 
@@ -231,28 +231,47 @@ Following are the expected functionalities that need to be implemented:
   5. Orchestrator, worker set up
   6. Rabbitmq, zookeeper usage
   
-  ## Steps to Run
-  1. Install Flask
-  ```
-  pip install Flask
-  ```
-  2. Install docker
-  ```
-  sudo sh ./docker_install.sh
-  ```
-  3. Set up the containers in the rides, users and orchestrator instances
-  ```
-  sudo docker-compose build
-  sudo docker-compose up
-  ```
+## Commands
+1. Install Flask
+```
+pip install Flask
+```
+2. Install docker
+```
+sudo sh ./docker_install.sh
+```
+3. Build the docker images
+```
+sudo docker-compose build
+```
+4. Compose the docker image and run the container
+```
+sudo docker-compose up
+```
+5. Viewing existing docker images
+```
+sudo docker image ls
+```
+6. Push from local system to instance
+```
+scp -i <.pem file location> -r <location on system> ubuntu@<public DNS of instance>:<location on instance>
+
+scp -i /Desktop/amazon.pem -r ./Desktop/MS2334.txt ubuntu@ec2-54-166-128-20.compute-1.amazonaws.com:~/data/
+```
+7. Download from instance to local system
+```
+scp -r -i <.pem file location> ubuntu@<public DNS of instance>:<location on instance> <location on system> 
+
+scp -r -i /Desktop/amazon.pem ubuntu@ec2-54-166-128-20.compute-1.amazonaws.com:~/data/ ./Desktop/MS2334.txt
+```
   
-  ## References
-  1) [Create an AWS EC2 instance](https://www.guru99.com/creating-amazon-ec2-instance.html)
-  2) [Assign an Elastic IP to your AWS EC2 instance](https://www.cloudbooklet.com/how-to-assign-an-elastic-ip-address-to-your-ec2-instance-in-aws/)
-  3) [Use python SQLite3 using SQLAlchemy](https://medium.com/@mahmudahsan/how-to-use-python-sqlite3-using-sqlalchemy-158f9c54eb32)
-  4) [Building Docker Images](https://docs.docker.com/get-started/part2/)
-  5) [Mapping container port to localhost of AWS instance](https://docs.docker.com/get-started/part2/#run-the-app)
-  6) [Creating AWS target groups and a load balancer with path routing](https://hackernoon.com/what-is-amazon-elastic-load-balancer-elb-16cdcedbd485)
+## References
+1) [Create an AWS EC2 instance](https://www.guru99.com/creating-amazon-ec2-instance.html)
+2) [Assign an Elastic IP to your AWS EC2 instance](https://www.cloudbooklet.com/how-to-assign-an-elastic-ip-address-to-your-ec2-instance-in-aws/)
+3) [Use python SQLite3 using SQLAlchemy](https://medium.com/@mahmudahsan/how-to-use-python-sqlite3-using-sqlalchemy-158f9c54eb32)
+4) [Building Docker Images](https://docs.docker.com/get-started/part2/)
+5) [Mapping container port to localhost of AWS instance](https://docs.docker.com/get-started/part2/#run-the-app)
+6) [Creating AWS target groups and a load balancer with path routing](https://hackernoon.com/what-is-amazon-elastic-load-balancer-elb-16cdcedbd485)
   
-  ## Contact
-  For any comments or questions, please contact us at dprajwala11@gmail.com / sanjanashekar99@gmail.com / abhijeetmurthy@gmail.com / sakshidgoel@gmail.com
+## Contact
+For any comments or questions, please contact us at dprajwala11@gmail.com / sanjanashekar99@gmail.com / abhijeetmurthy@gmail.com / sakshidgoel@gmail.com
