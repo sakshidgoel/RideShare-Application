@@ -200,7 +200,7 @@ In this section, we have to put the two microservices (containers) into two diff
    2. **Reset HTTP requests counter:**
        + Route: /ap1/v1/_count
        + HTTP Request Method: DELETE  
-  These two APIs above along with the existing **Clear db** APIs will be called on the public IP of each microservice directly and not on the load balancer IP, as these APIs are microservice-specific. Also, API requests should be counted whether they failed or were successful and calls to these two APIs should not be counted towards the HTTP request count returned.
+These two APIs above along with the existing **Clear db** APIs will be called on the public IP of each microservice directly and not on the load balancer IP, as these APIs are microservice-specific. Also, API requests should be counted whether they failed or were successful and calls to these two APIs should not be counted towards the HTTP request count returned.
 
 ### Load Balancer
 A load balancer serves as the single point of contact for clients. The load balancer distributes incoming application traffic across multiple targets, such as EC2 instances, in multiple Availability Zones. This increases the availability of your application. After the load balancer receives a request, it evaluates the listener rules in priority order to determine which rule to apply, and then selects a target from the target group for the rule action.
