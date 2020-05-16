@@ -191,15 +191,17 @@ In this section, we have to put the two microservices (containers) into two diff
 + The following API must be added only to the rides instance/microservice:  
     **Get total number of rides:**
      + Route: /api/v1/rides/count
-     + HTTP Request Method: GET
-  This API will be called on the load balancer public IP and must be routed to the rides instance.
+     + HTTP Request Method: GET  
+
+This API will be called on the load balancer public IP and must be routed to the rides instance.
 + The following two APIs must be added to both of the instances/microservices:
-   1. **Get total HTTP requests made to microservice:**
-       * Route: /api/v1/_count
-       * HTTP Request Method: GET
-   2. **Reset HTTP requests counter:**
-       + Route: /ap1/v1/_count
-       + HTTP Request Method: DELETE  
+  1. **Get total HTTP requests made to microservice:**
+      * Route: /api/v1/_count
+      * HTTP Request Method: GET
+  2. **Reset HTTP requests counter:**
+      + Route: /ap1/v1/_count
+      + HTTP Request Method: DELETE  
+
 These two APIs above along with the existing **Clear db** APIs will be called on the public IP of each microservice directly and not on the load balancer IP, as these APIs are microservice-specific. Also, API requests should be counted whether they failed or were successful and calls to these two APIs should not be counted towards the HTTP request count returned.
 
 ### Load Balancer
