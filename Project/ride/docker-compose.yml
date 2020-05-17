@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  
+  rides:
+    image: rides:latest
+    build: .
+    command: python3 CC_0139_0148_0905_1736_ride.py 
+    restart: always
+    ports:
+      - 8000
+    
