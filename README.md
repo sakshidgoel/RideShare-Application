@@ -258,23 +258,21 @@ according to the given specifications.
 4. Implement High Availability with Zookeeper
 
 ### Architecture of DBaaS
-+ The orchestrator will listen to incoming requests on port 80. 
-+ We will be using AMQP(Advanced Message Queue Protocol) using RabbitMQ as a message broker for this project. 
-+ The orchestrator is responsible for publishing the incoming message into the relevant queue and bringing up new worker containers as desired. 
-+ There will be four message queues named “readQ”, “writeQ”, “syncQ” and “responseQ”:
-   + All the read requests will be published to the readQ. 
-   + All the write requests will be published to the writeQ. 
-+ There will be two types of workers running on the instance:
-   + The master worker will listen to the “writeQ”. It will pick up all incoming messages on the “writeQ” and actually write them to a persistent database. 
-   + The slave worker is responsible for responding to all the read requests coming to the DBaaS orchestrator, through the "readQ".  
-+ Upon querying the database based on the request, the slave will write the output to the “responseQ”, which will then be picked up by the orchestrator, using the right type of exchange and correctly using channels. 
-+ If there are multiple instances of the worker running, then the messages from the readQ must be picked up by the slave workers in a round robin fashion. 
-+ Each worker (slave and master) will have its own copy of the database. The database will not be shared among the workers, which creates the problem of maintaining consistency between the various replicas of the same database. 
++ **Orchestrator:** 
+   + The orchestrator will listen to incoming requests on port 80. 
+   + The orchestrator is responsible for publishing the incoming message into the relevant queue and bringing up new worker containers as desired. We will be using **AMQP**(Advanced Message Queue Protocol) using **RabbitMQ** as a message broker for this project. 
++ **Queues:** There will be four message queues named “readQ”, “writeQ”, “syncQ” and “responseQ”:
+   + **ReadQ:** All the read requests will be published to the readQ. 
+   + **WriteQ:** All the write requests will be published to the writeQ. 
++ **Workers:** There will be two types of workers running on the instance and they will connect to a common rabbitMQ.:
+   + The **master worker** will listen to the “writeQ”. It will pick up all incoming messages on the “writeQ” and actually write them to a persistent database. 
+   + The **slave worker** is responsible for responding to all the read requests coming to the DBaaS orchestrator, through the "readQ".  
++ **ResponseQ:** Upon querying the database based on the request, the slave will write the output to the “responseQ”, which will then be picked up by the orchestrator, using the right type of exchange and correctly using channels. 
++ **Round-robin message picking:** If there are multiple instances of the worker running, then the messages from the readQ must be picked up by the slave workers in a round robin fashion. 
++ **Eventual Consistency:** Each worker (slave and master) will have its own copy of the database. The database will not be shared among the workers, which creates the problem of maintaining consistency between the various replicas of the same database. 
    + To solve this issue, we will use an “eventual consistency” model, where after a write has successfully been performed by the master worker, it must eventually be consistent with all the slave workers. 
-   + For implementing eventual consistency, the master will write the new db writes on the “syncQ” after every write that master does, which will be picked up by the slaves to update their copy of the database to the lastest. 
-+ All the workers will run in their own containers, they will connect to a common rabbitMQ. 
-+ The orchestrator will also run in a container. 
-+ **High Availability:** DBaaS has to be highly available, hence all the workers will be “watched” for failure by zookeeper, a cluster coordination service. 
+   + For implementing eventual consistency, the master will write the new db writes on the **syncQ** after every write that master does, which will be picked up by the slaves to update their copy of the database to the lastest.  
++ **High Availability:** DBaaS has to be highly available, hence all the workers will be “watched” for failure by zookeeper, a cluster coordination service. (@zk.ChildrenWatch keeps a watch on the children of a root.) 
    + In case of the failure of a slave, a new slave worker will be started. 
    + In case of failure of the master, the existing slave, with the lowest pid of the container they are running in, will be elected as master, using **zookeeper’s leader election**. And upon that, a new slave node will be brought up by the orchestrator.
    + All the data is copied asynchronously to the new worker.
@@ -294,6 +292,11 @@ according to the given specifications.
       + Route: api/v1/worker/list
       + HTTP Request Method: GET
 + **Number of Containers:** Initially, we will be running 5 containers, for "zookeeper", "rabbitmq", "orchestrator", "slave" and "master", which will later be increased/decreased accordingly.
++ **Kazoo:** It has states that can help us take actions when the connection has been stopped, restored or when zookeeper session has expired. The kazaoo states are as follows:
+   + LOST: when an instance is first created
+   + CONNECTED: when the instance gets connected
+   + SUSPENDED: when it needs to transition to a new zookeeper.
++ **Replication:** Since there are one master and one slave initially, the databases are consistent. When a new slave is spawned, a shared volume is created. Since docker does not allow transfering of data from one container to another, it writes to the shared volume and then all databases of the various workers sync according to this. So when a new worker starts, it takes a copy of shared volume from the shared database. 
 
 ---
 
