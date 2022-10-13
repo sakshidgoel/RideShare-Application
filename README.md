@@ -366,4 +366,4 @@ scp -r -i /Desktop/amazon.pem ubuntu@ec2-54-166-128-20.compute-1.amazonaws.com:~
 ---
 
 ## Contact
-For any comments or questions, please contact us at dprajwala11@gmail.com / sanjanashekar99@gmail.com / abhijeetmurthy@gmail.com / sakshidgoel@gmail.com
+For any comments or questions, please contact us at sakshidgoel@gmail.com / dprajwala11@gmail.com / sanjanashekar99@gmail.com / abhijeetmurthy@gmail.com
